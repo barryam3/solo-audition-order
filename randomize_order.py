@@ -1,82 +1,29 @@
 import random
+from argparse import ArgumentParser
 
-xprods = [
-  "Michaye",
-  "Alex",
-  "Jessica",
-  "Erica",
-  "Helen",
-  "Matthew",
-  "John",
-  "Dongho",
-  "Yeye",
-  "Craig",
-  "Barry"
-]
+parser = ArgumentParser(description="Randomize solo audition order.")
+parser.add_argument("tsvfile", type=str, help="Path to TSV file.")
+args = parser.parse_args()
 
-interest = {
-    "You Will Be Found" : {
-        "Solo 1" : [
-            "Craig",
-            "Barry",
-            "Alex",
-            "Matthew",
-            "John",
-            "Yeye",
-            "Dongho",
-            "Helen"
-        ],
-        "Solo 2" : [
-            "Alex",
-            "Matthew",
-            "John",
-            "Helen"
-        ],
-        "Perc" : [
-            "Craig",
-            "John",
-            "Yeye"
-        ]
-    },
-    "No Longer Slaves" : {
-        "Solo 1" : [
-            "Craig",
-            "Alex",
-            "Jessica",
-            "Matthew",
-            "Yeye",
-            "John",
-            "Michaye"
-        ],
-        "Solo 2" : [
-            "Matthew",
-            "Michaye",
-            "Jessica",
-            "Alex"
-        ],
-        "Perc" : [
-            "Craig",
-            "Jessica",
-            "John"
-        ]
-    },
-    "Beloved" : {
-        "Solo" : [
-            "Craig",
-            "Matthew",
-            "Yeye",
-            "John",
-            "Dongho",
-            "Jessica"
-        ],
-        "Perc" : [
-            "Craig",
-            "Jessica",
-            "Yeye",
-            "John"
-        ]
-    }
-}
+def split_and_strip(string, sep):
+    return [s.strip() for s in string.split(sep)]
+
+interest = {}
+with open(args.tsvfile) as f:
+    songs = split_and_strip(f.readline(), "\t")[2:-1]
+    for song in songs:
+        interest[song] = {}
+    for line in f.readlines():
+        row = split_and_strip(line, "\t")
+        person_name = row[1]
+        for song, cell in zip(songs, row[2:-1]):
+            solos = split_and_strip(cell, ",")
+            for solo in solos:
+                if solo == '':
+                    continue
+                if solo not in interest[song]:
+                    interest[song][solo] = []
+                interest[song][solo].append(person_name)
 
 # returns true if l1[i] == l2[i] for any i
 def match_one(l1, l2):
@@ -106,10 +53,10 @@ def shuffled(lis):
 def draw(lis, n):
     out = []
     while len(out) < n:
-        out.extend(shuffled(lis)[:max(len(lis), n-len(out))])
+        out.extend(shuffled(lis)[:min(len(lis), n-len(out))])
     return out
 
-def assign_solos():
+def assign_solos(interest):
     for song, solos in interest.items():
         # sort solos by most interest
         data = list(solos.items())
@@ -145,5 +92,5 @@ def assign_solos():
             print(" / ".join(people))
         print("")
 
-assign_solos()
+assign_solos(interest)
 
